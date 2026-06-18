@@ -44,4 +44,10 @@ describe('VisitorsService.followUp', () => {
     const r = await service.followUp('v1', { outcome: 'note', note: 'left voicemail' });
     expect(r.stage).toBe('new');
   });
+
+  it('advance on terminal stage (won) stays at won', async () => {
+    prisma.visitor.findUniqueOrThrow.mockResolvedValue({ id: 'v1', stage: 'won' });
+    const r = await service.followUp('v1', { outcome: 'advance' });
+    expect(r.stage).toBe('won');
+  });
 });

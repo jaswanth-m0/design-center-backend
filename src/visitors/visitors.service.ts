@@ -1,9 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateVisitorDto } from './dto/create-visitor.dto';
 import { FollowUpDto } from './dto/follow-up.dto';
+import { UpdateVisitorDto } from './dto/update-visitor.dto';
 
 @Injectable()
 export class VisitorsService {
+  private static NEXT_STAGE: Record<string, string> = {
+    new: 'contacted',
+    contacted: 'consultation',
+    consultation: 'won',
+  };
+
   constructor(private prisma: PrismaService) {}
 
   findByHostess(hostessId: string) {
@@ -23,25 +31,19 @@ export class VisitorsService {
     return v;
   }
 
-  create(hostessId: string, data: any) {
-    const { timelineEvents, ...rest } = data;
+  create(hostessId: string, data: CreateVisitorDto) {
+    const { timelineEvents, ...rest } = data as any;
     return this.prisma.visitor.create({ data: { ...rest, hostessId } });
   }
 
-  update(id: string, data: any) {
-    const { timelineEvents, id: _id, hostessId, createdAt, updatedAt, ...rest } = data;
+  update(id: string, data: UpdateVisitorDto) {
+    const { timelineEvents, id: _id, hostessId, createdAt, updatedAt, ...rest } = data as any;
     return this.prisma.visitor.update({ where: { id }, data: rest });
   }
 
   addTimelineEvent(visitorId: string, data: { label: string; detail?: string }) {
     return this.prisma.timelineEvent.create({ data: { visitorId, ...data } });
   }
-
-  private static NEXT_STAGE: Record<string, string> = {
-    new: 'contacted',
-    contacted: 'consultation',
-    consultation: 'won',
-  };
 
   async followUp(id: string, dto: FollowUpDto) {
     const visitor = await this.prisma.visitor.findUniqueOrThrow({ where: { id } });
