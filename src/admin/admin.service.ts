@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { CreateUserDto } from '../auth/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { aggregateLeads } from './lead-stats';
 
 @Injectable()
 export class AdminService {
@@ -106,6 +107,50 @@ export class AdminService {
       if (row.leadSource) leadSourceMap[row.leadSource] = row._count.id;
     }
 
+    // --- Extended analytics ---
+    const leadRows = await this.prisma.visitor.findMany({
+      select: { stage: true, leadSource: true },
+    });
+    const { pipeline, leadSources, conversionRate: leadConversionRate } = aggregateLeads(leadRows);
+
+    const topViewedVendors = await this.prisma.vendor.findMany({
+      orderBy: { viewCount: 'desc' },
+      take: 5,
+      select: { id: true, name: true, viewCount: true },
+    });
+
+    const savedGroups = await this.prisma.savedVendor.groupBy({
+      by: ['vendorId'],
+      _count: { vendorId: true },
+      orderBy: { _count: { vendorId: 'desc' } },
+      take: 5,
+    });
+    const savedVendorRows = await this.prisma.vendor.findMany({
+      where: { id: { in: savedGroups.map((g) => g.vendorId) } },
+      select: { id: true, name: true },
+    });
+    const topSavedVendors = savedGroups.map((g) => ({
+      id: g.vendorId,
+      name: savedVendorRows.find((v) => v.id === g.vendorId)?.name ?? g.vendorId,
+      savedCount: g._count.vendorId,
+    }));
+
+    const svcGroups = await this.prisma.savedService.groupBy({
+      by: ['serviceId'],
+      _count: { serviceId: true },
+      orderBy: { _count: { serviceId: 'desc' } },
+      take: 5,
+    });
+    const svcRows = await this.prisma.service.findMany({
+      where: { id: { in: svcGroups.map((g) => g.serviceId) } },
+      select: { id: true, name: true },
+    });
+    const topServices = svcGroups.map((g) => ({
+      id: g.serviceId,
+      name: svcRows.find((s) => s.id === g.serviceId)?.name ?? g.serviceId,
+      requests: g._count.serviceId,
+    }));
+
     return {
       overview: {
         totalUsers,
@@ -130,6 +175,12 @@ export class AdminService {
       },
       recentVisitors,
       recentConsultations,
+      pipeline,
+      leadSources,
+      conversionRate: leadConversionRate,
+      topViewedVendors,
+      topSavedVendors,
+      topServices,
     };
   }
 }
