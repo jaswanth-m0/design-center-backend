@@ -32,13 +32,11 @@ export class VisitorsService {
   }
 
   create(hostessId: string, data: CreateVisitorDto) {
-    const { timelineEvents, ...rest } = data as any;
-    return this.prisma.visitor.create({ data: { ...rest, hostessId } });
+    return this.prisma.visitor.create({ data: { ...(data as any), hostessId } });
   }
 
   update(id: string, data: UpdateVisitorDto) {
-    const { timelineEvents, id: _id, hostessId, createdAt, updatedAt, ...rest } = data as any;
-    return this.prisma.visitor.update({ where: { id }, data: rest });
+    return this.prisma.visitor.update({ where: { id }, data: data as any });
   }
 
   addTimelineEvent(visitorId: string, data: { label: string; detail?: string }) {
