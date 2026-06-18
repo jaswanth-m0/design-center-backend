@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVisitorDto } from './dto/create-visitor.dto';
 import { FollowUpDto } from './dto/follow-up.dto';
@@ -12,7 +18,42 @@ export class VisitorsService {
     consultation: 'won',
   };
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+    private notifications: NotificationsService,
+  ) {}
+
+  async sendEmail(id: string) {
+    const visitor = await this.prisma.visitor.findUnique({ where: { id } });
+    if (!visitor) throw new NotFoundException('Visitor not found');
+    if (!visitor.email) {
+      throw new BadRequestException('Visitor has no email on file');
+    }
+
+    // Send first — only record the timeline/notification if delivery succeeds.
+    await this.mail.sendFollowUp(visitor.email, visitor.fullName);
+
+    await this.prisma.timelineEvent.create({
+      data: {
+        visitorId: id,
+        label: 'Follow-up email sent',
+        detail: visitor.email,
+      },
+    });
+    const updated = await this.prisma.visitor.update({
+      where: { id },
+      data: { lastContactedAt: new Date() },
+      include: { timelineEvents: { orderBy: { timestamp: 'asc' } } },
+    });
+    await this.notifications.create({
+      kind: 'email_sent',
+      title: `Follow-up email sent to ${visitor.fullName}`,
+      subtitle: visitor.email,
+      visitorId: id,
+    });
+    return updated;
+  }
 
   findByHostess(hostessId: string) {
     return this.prisma.visitor.findMany({

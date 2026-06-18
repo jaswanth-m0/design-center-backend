@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,10 +42,13 @@ export class VendorsController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() dto: UpdateVendorDto) {
-    return this.vendors.update(id, dto);
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateVendorDto,
+    @Request() req: { user: { id: string; role: string } },
+  ) {
+    return this.vendors.update(id, dto, req.user);
   }
 
   @Delete(':id')

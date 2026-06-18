@@ -62,4 +62,10 @@ export class VisitorsController {
   followUp(@Param('id') id: string, @Body() dto: FollowUpDto) {
     return this.visitors.followUp(id, dto);
   }
+
+  @Post(':id/email')
+  @UseGuards(JwtAuthGuard)
+  sendEmail(@Param('id') id: string) {
+    return this.visitors.sendEmail(id);
+  }
 }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -21,7 +25,21 @@ export class VendorsService {
     return this.prisma.vendor.create({ data: data as any });
   }
 
-  update(id: string, data: UpdateVendorDto) {
+  async update(
+    id: string,
+    data: UpdateVendorDto,
+    requester?: { id: string; role: string },
+  ) {
+    // Non-admins may only update the vendor their profile is linked to.
+    if (requester && requester.role !== 'admin') {
+      const profile = await this.prisma.profile.findUnique({
+        where: { id: requester.id },
+        select: { vendorId: true },
+      });
+      if (!profile || profile.vendorId !== id) {
+        throw new ForbiddenException('You can only manage your own listing');
+      }
+    }
     return this.prisma.vendor.update({ where: { id }, data: data as any });
   }
 
