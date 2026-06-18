@@ -79,6 +79,6 @@ export class AuthService {
         profile: { create: { name: dto.name } },
       },
     });
-    return this.me(user.id);
+    return this.buildResponse(user.id);
   }
 }

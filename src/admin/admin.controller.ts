@@ -10,6 +10,11 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(private admin: AdminService) {}
 
+  @Get('stats')
+  getStats() {
+    return this.admin.getStats();
+  }
+
   @Get('users')
   listUsers(@Query('role') role?: string) {
     return this.admin.listUsers(role);
