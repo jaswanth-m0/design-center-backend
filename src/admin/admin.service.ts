@@ -42,6 +42,13 @@ export class AdminService {
     });
   }
 
+  listAllVisitors() {
+    return this.prisma.visitor.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { timelineEvents: { orderBy: { timestamp: 'asc' } } },
+    });
+  }
+
   async getStats() {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

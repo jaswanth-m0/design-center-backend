@@ -31,8 +31,8 @@ export class VisitorsService {
     return v;
   }
 
-  create(hostessId: string, data: CreateVisitorDto) {
-    return this.prisma.visitor.create({ data: { ...(data as any), hostessId } });
+  create(hostessId: string | null, data: CreateVisitorDto) {
+    return this.prisma.visitor.create({ data: { ...(data as any), hostessId: hostessId ?? undefined } });
   }
 
   update(id: string, data: UpdateVisitorDto) {

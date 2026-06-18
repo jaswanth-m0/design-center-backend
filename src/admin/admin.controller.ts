@@ -15,6 +15,11 @@ export class AdminController {
     return this.admin.getStats();
   }
 
+  @Get('visitors')
+  listVisitors() {
+    return this.admin.listAllVisitors();
+  }
+
   @Get('users')
   listUsers(@Query('role') role?: string) {
     return this.admin.listUsers(role);

@@ -1,23 +1,25 @@
 import { Body, Controller, Get, Param, Post, Put, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { VisitorsService } from './visitors.service';
 import { FollowUpDto } from './dto/follow-up.dto';
 import { CreateVisitorDto } from './dto/create-visitor.dto';
 import { UpdateVisitorDto } from './dto/update-visitor.dto';
 
 @Controller('visitors')
-@UseGuards(JwtAuthGuard)
+@UseGuards(OptionalJwtAuthGuard)
 export class VisitorsController {
   constructor(private visitors: VisitorsService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findMine(@Request() req: { user: { id: string } }) {
     return this.visitors.findByHostess(req.user.id);
   }
 
   @Post()
-  create(@Request() req: { user: { id: string } }, @Body() dto: CreateVisitorDto) {
-    return this.visitors.create(req.user.id, dto);
+  create(@Request() req: { user?: { id: string } }, @Body() dto: CreateVisitorDto) {
+    return this.visitors.create(req.user?.id ?? null, dto);
   }
 
   @Get(':id')
@@ -36,6 +38,7 @@ export class VisitorsController {
   }
 
   @Post(':id/follow-up')
+  @UseGuards(JwtAuthGuard)
   followUp(@Param('id') id: string, @Body() dto: FollowUpDto) {
     return this.visitors.followUp(id, dto);
   }
