@@ -31,8 +31,9 @@ model Profile {
   id        String    @id @db.Uuid
   name      String?
   phone     String?
-  avatarUrl String?   @map("avatar_url")
-  vendorId  String?   @unique @map("vendor_id")
+  avatarUrl    String?   @map("avatar_url")
+  heardAboutUs String?   @map("heard_about_us")
+  vendorId     String?   @unique @map("vendor_id")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -81,6 +82,11 @@ model Vendor {
   popular          Boolean  @default(false)
   recommended      Boolean  @default(false)
   rating           Decimal? @db.Decimal(3, 1)
+  logo             String?
+  tagline          String?
+  established      String?
+  highlights       String[]
+  viewCount        Int      @default(0) @map("view_count")
   createdAt        DateTime @default(now()) @map("created_at")
 
   category      Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -180,6 +186,13 @@ model Visitor {
   interestedCategories String[]  @map("interested_categories")
   leadSource           String?   @map("lead_source")
   referrerName         String?   @map("referrer_name")
+  stage                String    @default("new")
+  heardAboutUs         String?   @map("heard_about_us")
+  lookingFor           String?   @map("looking_for")
+  lastContactedAt      DateTime? @map("last_contacted_at")
+  nextFollowUpAt       DateTime? @map("next_follow_up_at")
+  lostReason           String?   @map("lost_reason")
+  assignedPartnerId    String?   @map("assigned_partner_id") @db.Uuid
   tourProgress         Int       @default(0) @map("tour_progress")
   hostessId            String?   @map("hostess_id") @db.Uuid
   createdAt            DateTime  @default(now()) @map("created_at")
