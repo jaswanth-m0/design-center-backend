@@ -176,6 +176,28 @@ export class AdminService {
       requests: g._count.serviceId,
     }));
 
+    // Highest Conversion Services — requested via consultations vs completed.
+    const consultRows = await this.prisma.consultation.findMany({
+      select: { service: true, status: true },
+    });
+    const svcConv: Record<string, { requests: number; completed: number }> = {};
+    for (const c of consultRows) {
+      const name = (c.service || 'Unspecified').trim() || 'Unspecified';
+      const agg = (svcConv[name] ??= { requests: 0, completed: 0 });
+      agg.requests += 1;
+      if (c.status === 'completed') agg.completed += 1;
+    }
+    const highestConversionServices = Object.entries(svcConv)
+      .map(([name, a]) => ({
+        name,
+        requests: a.requests,
+        completed: a.completed,
+        conversion:
+          a.requests > 0 ? Math.round((a.completed / a.requests) * 100) : 0,
+      }))
+      .sort((x, y) => y.conversion - x.conversion || y.requests - x.requests)
+      .slice(0, 5);
+
     return {
       overview: {
         totalUsers,
@@ -206,6 +228,7 @@ export class AdminService {
       topViewedVendors,
       topSavedVendors,
       topServices,
+      highestConversionServices,
     };
   }
 }
